@@ -1,16 +1,44 @@
 const postModel = require("../models/postsModel")
 
-const getAllPosts = (req, res) => {
+const getAllPosts = async (req, res) => {
   const sender = req.query.sender;
-  res.send('getPostBySender: ' + sender);
+  try {
+    let posts;
+    if(sender){
+      posts = await postModel.find({sender: sender});
+    } else {
+      posts = await postModel.find();
+    }
+    res.status(201).send(posts);
+   } 
+   catch(error){
+     res.status(400).send(error);
+   }
   }
 
-const getPostById = (req, res) => {
-  res.send('getPostById: '+ req.params.id);
+const getPostById = async (req, res) => {
+  const postId = req.params.id;
+  console.log('postId',postId)
+  try {
+    const posts = await postModel.findById(postId);
+    console.log('posts:' + posts)
+    res.status(201).send(posts);
+   } 
+   catch(error){
+     res.status(400).send(error);
+   }
   }
 
-const deletePostById = (req, res) => {
-  res.send('deletePostById: '+ req.params.id);
+const deletePostById = async (req, res) => {
+    const id = req.params.id;
+  
+  try {
+    const posts = await postModel.findByIdAndDelete(id)
+    res.status(201).send(posts);
+   } 
+   catch(error){
+     res.status(400).send(error);
+   }
   }
 
 const createPost = async (req, res) => {
