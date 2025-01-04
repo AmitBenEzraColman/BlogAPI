@@ -2,16 +2,17 @@
 GET http://localhost:3000
 ###
 GET http://localhost:3000/posts
-##
+###
 GET http://localhost:3000/posts?sender=Amit
-##
+###
 GET http://localhost:3000/posts/1
 ###
 
-POST http://localhost:3000/posts Content-Type: application/json
+POST http://localhost:3000/posts 
+Content-Type: application/json
 
 {
-"title": "Hello", "owner": "Amit", "content": "Hello World..."
+"title": "Hello", "sender": "Amit", "content": "Hello World..."
 }
 
 ###
