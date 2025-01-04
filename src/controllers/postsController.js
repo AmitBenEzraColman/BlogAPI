@@ -13,16 +13,16 @@ const deletePostById = (req, res) => {
   res.send('deletePostById: '+ req.params.id);
   }
 
-const createPost = (req, res) => {
+const createPost = async (req, res) => {
   const post = req.body;
-  postModel.create(post, (error, post) => {
-    if (error) {
-      res.status(400).send(error);
-    } else {
-      res.send(post);
-    }
-  });
-  res.send('createPost: ' + JSON.stringify(post));
+  try {
+   const newPost = await postModel.create(post)
+   res.status(201).send(newPost);
+  } 
+  catch(error){
+    res.status(400).send(error);
+  }
+  
   }
 
   module.exports = {
