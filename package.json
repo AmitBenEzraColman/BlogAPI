@@ -1,0 +1,10 @@
+{
+  "name": "BlogApi",
+  "version": "1.0.0",
+  "author": "Amit Ben Ezra & Yarin Hersko",
+  "license": "ISC",
+  "main": "app.js",
+  "scripts": {
+    "dev": ""
+  }
+}
