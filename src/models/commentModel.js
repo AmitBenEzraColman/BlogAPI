@@ -11,7 +11,8 @@ const commentSchema = new Schema({
     required: true,
   },
   postId: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Comment",
     required: true,
   },
 });
