@@ -1,11 +1,14 @@
-const { Model } = require("mongoose");
+import { Request, Response } from "express";
+import { Model } from "mongoose";
 
-class BaseController {
-  constructor(model) {
+class BaseController<T> {
+  model: Model<T>;
+  constructor(model: any) {
     this.model = model;
   }
-  async getAll(req, res) {
-    const filter = req.query.owner;
+
+  async getAll(req: Request, res: Response) {
+    const filter = req.query.sender;
     try {
       if (filter) {
         const item = await this.model.find({ sender: filter });
@@ -19,7 +22,7 @@ class BaseController {
     }
   }
 
-  async getById(req, res) {
+  async getById(req: Request, res: Response) {
     const id = req.params.id;
 
     try {
@@ -34,7 +37,7 @@ class BaseController {
     }
   }
 
-  async create(req, res) {
+  async create(req: Request, res: Response) {
     const body = req.body;
     try {
       const item = await this.model.create(body);
@@ -44,7 +47,7 @@ class BaseController {
     }
   }
 
-  async deleteItem(req, res) {
+  async deleteById(req: Request, res: Response) {
     const id = req.params.id;
     try {
       const rs = await this.model.findByIdAndDelete(id);
@@ -55,4 +58,4 @@ class BaseController {
   }
 }
 
-module.exports = BaseController;
+export default BaseController;
