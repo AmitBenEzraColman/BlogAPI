@@ -6,7 +6,5 @@ class CommentsController extends BaseController<IComments> {
   constructor() {
     super(commentModel);
   }
-
-  //Here we can add more functions
 }
 export default new CommentsController();
