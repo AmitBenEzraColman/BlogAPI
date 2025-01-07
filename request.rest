@@ -1,0 +1,35 @@
+###
+GET http://localhost:3000
+###
+GET http://localhost:3000/posts
+###
+GET http://localhost:3000/posts?sender=Amit
+###
+GET http://localhost:3000/posts/6779ba422ef880c97d4a9697
+###
+POST http://localhost:3000/posts 
+Content-Type: application/json
+{
+"title": "Hello", "sender": "Amit", "content": "Hello World..."
+}
+
+###
+GET http://localhost:3000/comments
+###
+GET http://localhost:3000/comments/677acfa8b1bc6fa315289939
+###
+###
+GET http://localhost:3000/comments?sender=Yarin
+###
+POST http://localhost:3000/comments
+Content-Type: application/json
+
+{
+    "comment": "Hello",
+    "sender": "Yarin",
+    "postId": "6779ba422ef880c97d4a9697",
+}
+###
+DELETE http://localhost:3000/comments/677acfa8b1bc6fa315289939
+###
+DELETE http://localhost:3000/posts/6779ba422ef880c97d4a9697
