@@ -87,12 +87,14 @@ describe("Posts Tests", () => {
     expect(saveResponse.statusCode).toBe(201);
     expect(saveResponse.body._id).toBeDefined();
     const postId = saveResponse.body._id;
+    const getResponse = await request(app).get("/posts/" + postId);
+    expect(getResponse.statusCode).toBe(200);
 
     const deleteresponse = await request(app).delete("/posts/" + postId)
       .set({ authorization: "JWT " + testUser.token });
     expect(deleteresponse.statusCode).toBe(200);
-    const getResponse = await request(app).get("/posts/" + postId);
-    expect(getResponse.statusCode).toBe(404);
+    const getDeleteResponse = await request(app).get("/posts/" + postId);
+    expect(getDeleteResponse.statusCode).toBe(404);
   });
 
   test("Test Create Post fail", async () => {
