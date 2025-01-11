@@ -5,7 +5,6 @@ import { Express } from "express";
 import testComments from "./testComments.json";
 import initBlogApiApp from "../server";
 import userModel, { IUser } from "../models/userModel";
-import postModel from "../models/postsModel";
 
 var app: Express;
 
@@ -29,7 +28,6 @@ let mappedTestComments: testComment[];
 beforeAll(async () => {
   app = await initBlogApiApp();
   await commentsModel.deleteMany();
-  await postModel.deleteMany();
 
   await userModel.deleteMany();
   await request(app).post("/auth/register").send(testUser);
