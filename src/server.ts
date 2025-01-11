@@ -5,6 +5,7 @@ import bodyParser from "body-parser";
 import express, { Express } from "express";
 import postsRoute from "./routes/postsRoute";
 import commentsRoute from "./routes/commentsRoute";
+import authRouter from "./routes/authRoute";
 
 dotenv.config();
 
@@ -19,6 +20,7 @@ db.once("open", () => console.log("Connected to database"));
 //App Routers
 blogApiApp.use("/posts", postsRoute);
 blogApiApp.use("/comments", commentsRoute);
+blogApiApp.use("/auth", authRouter);
 
 const initBlogApiApp = () => {
   return new Promise<Express>((resolve, reject) => {
