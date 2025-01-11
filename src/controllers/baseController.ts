@@ -30,7 +30,7 @@ class BaseController<T> {
       if (item != null) {
         res.send(item);
       } else {
-        res.status(404).send("not found");
+        res.status(404).send({ message: "item not found" });
       }
     } catch (error) {
       res.status(400).send(error);
@@ -51,7 +51,7 @@ class BaseController<T> {
     const id = req.params.id;
     try {
       const rs = await this.model.findByIdAndDelete(id);
-      res.status(200).send("deleted");
+      res.status(200).send({ message: "item deleted" });
     } catch (error) {
       res.status(400).send(error);
     }
