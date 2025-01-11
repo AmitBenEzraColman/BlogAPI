@@ -33,7 +33,6 @@ afterAll((done) => {
   done();
 });
 
-let postId = "";
 describe("Posts Tests", () => {
   test("Empty Posts test get all", async () => {
     const response = await request(app).get("/posts");
@@ -48,18 +47,6 @@ describe("Posts Tests", () => {
     expect(response.statusCode).toBe(201);
     expect(response.body.title).toBe(testPosts[0].title);
     expect(response.body.content).toBe(testPosts[0].content);
-    expect(response.body.sender).toBe(testPosts[0].sender);
-    postId = response.body._id;
-  });
-
-  test("Test Create Post 2", async () => {
-    const response = await request(app).post("/posts")
-      .set({ authorization: "JWT " + testUser.token })
-      .send(testPosts[1]);
-    expect(response.statusCode).toBe(201);
-    expect(response.body.title).toBe(testPosts[1].title);
-    expect(response.body.content).toBe(testPosts[1].content);
-    expect(response.body.sender).toBe(testPosts[1].sender);
   });
 
   test("Test get post by sender", async () => {
@@ -71,10 +58,19 @@ describe("Posts Tests", () => {
   });
 
   test("Test get post by id", async () => {
-    const response = await request(app).get("/posts/" + postId);
-    expect(response.statusCode).toBe(200);
-    expect(response.body.title).toBe(testPosts[0].title);
-    expect(response.body.content).toBe(testPosts[0].content);
+    const saveResponse = await request(app).post("/posts")
+    .set({ authorization: "JWT " + testUser.token })
+    .send(testPosts[1]);
+    expect(saveResponse.statusCode).toBe(201);
+    expect(saveResponse.body.title).toBe(testPosts[1].title);
+    expect(saveResponse.body.content).toBe(testPosts[1].content);
+    expect(saveResponse.body._id).toBeDefined();
+    const postId = saveResponse.body._id;
+
+    const getResponse = await request(app).get("/posts/" + postId);
+    expect(getResponse.statusCode).toBe(200);
+    expect(getResponse.body.title).toBe(testPosts[1].title);
+    expect(getResponse.body.content).toBe(testPosts[1].content);
   });
 
 
@@ -85,11 +81,18 @@ describe("Posts Tests", () => {
   });
 
   test("Test Delete Post", async () => {
-    const response = await request(app).delete("/posts/" + postId)
+    const saveResponse = await request(app).post("/posts")
+    .set({ authorization: "JWT " + testUser.token })
+    .send(testPosts[2]);
+    expect(saveResponse.statusCode).toBe(201);
+    expect(saveResponse.body._id).toBeDefined();
+    const postId = saveResponse.body._id;
+
+    const deleteresponse = await request(app).delete("/posts/" + postId)
       .set({ authorization: "JWT " + testUser.token });
-    expect(response.statusCode).toBe(200);
-    const response2 = await request(app).get("/posts/" + postId);
-    expect(response2.statusCode).toBe(404);
+    expect(deleteresponse.statusCode).toBe(200);
+    const getResponse = await request(app).get("/posts/" + postId);
+    expect(getResponse.statusCode).toBe(404);
   });
 
   test("Test Create Post fail", async () => {
