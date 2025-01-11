@@ -22,7 +22,7 @@ beforeAll(async () => {
   await userModel.deleteMany();
   await request(app).post("/auth/register").send(testUser);
   const res = await request(app).post("/auth/login").send(testUser);
-  testUser.token = res.body.token;
+  testUser.token = res.body.accessToken;
   testUser._id = res.body._id;
   expect(testUser.token).toBeDefined();
 });

@@ -8,7 +8,8 @@
     "dev": "nodemon ./src/app.ts",
     "start": "tsc && node dist/app.js",
     "lint": "eslint . --ext .ts",
-    "test": "jest --detectOpenHandles --coverage --forceExit"
+    "test": "jest --detectOpenHandles --coverage --forceExit",
+    "test:debug": "node --inspect-brk node_modules/jest/bin/jest.js --detectOpenHandles --coverage --forceExit"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
