@@ -1,5 +1,5 @@
 import request from "supertest";
-import mongoose from "mongoose";
+import mongoose, { Types } from "mongoose";
 import commentsModel from "../models/commentModel";
 import { Express } from "express";
 import testComments from "./testComments.json";
@@ -98,42 +98,32 @@ describe("Comments Tests", () => {
   });
 
   test("Test get comment get all 2", async () => {
-    const response = await request(app).get("/posts");
+    const response = await request(app).get("/comments");
     expect(response.statusCode).toBe(200);
     expect(response.body.length).toBe(2);
   });
 
   test("Test delete comment", async () => {
-    const postResponse = await request(app).post("/posts")
+    const postResponse = await request(app).post("/comments")
     .set({ authorization: "JWT " + testUser.token })
     .send(mappedTestComments[2]);
     expect(postResponse.statusCode).toBe(201);
     expect(postResponse.body._id).toBeDefined();
     const commentId = postResponse.body._id;
-    const getResponse = await request(app).get("/posts/" + commentId);
+    const getResponse = await request(app).get("/comments/" + commentId);
     expect(getResponse.statusCode).toBe(200);
 
-    const deleteresponse = await request(app).delete("/posts/" + commentId)
-    expect(deleteresponse.statusCode).toBe(200);
-    const getDeleteResponse = await request(app).get("/posts/" + commentId);
+    const deleteResponse = await request(app).delete("/comments/" + commentId)
+    .set({ authorization: "JWT " + testUser.token });
+    expect(deleteResponse.statusCode).toBe(200);
+    const getDeleteResponse = await request(app).get("/comments/" + commentId);
     expect(getDeleteResponse.statusCode).toBe(404);
   });
 
-  test("Test Create Post fail without only comment", async () => {
-    const response = await request(app).post("/posts")
+  test("Test Create Post fail with fake postId", async () => {
+    const response = await request(app).post("/comments")
     .set({ authorization: "JWT " + testUser.token })
-      .send({
-        comment: "Test comment without sender",
-      });
-    expect(response.statusCode).toBe(400);
-  });
-
-  test("Test Create Post fail only postId", async () => {
-    const response = await request(app).post("/posts")
-    .set({ authorization: "JWT " + testUser.token })
-      .send({
-        postId: '123456789012345678901234',
-      });
+    .send({ comment: "Test comment", postId: new Types.ObjectId()});
     expect(response.statusCode).toBe(400);
   });
 

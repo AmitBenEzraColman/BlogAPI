@@ -90,9 +90,9 @@ describe("Posts Tests", () => {
     const getResponse = await request(app).get("/posts/" + postId);
     expect(getResponse.statusCode).toBe(200);
 
-    const deleteresponse = await request(app).delete("/posts/" + postId)
+    const deleteResponse = await request(app).delete("/posts/" + postId)
       .set({ authorization: "JWT " + testUser.token });
-    expect(deleteresponse.statusCode).toBe(200);
+    expect(deleteResponse.statusCode).toBe(200);
     const getDeleteResponse = await request(app).get("/posts/" + postId);
     expect(getDeleteResponse.statusCode).toBe(404);
   });

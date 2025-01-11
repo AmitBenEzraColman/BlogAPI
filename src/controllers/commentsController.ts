@@ -15,7 +15,7 @@ class CommentsController extends BaseController<IComments> {
     const postDB = await postModel.findById(postId);
 
     if (!postDB) {
-      res.status(404).json({ message: "Post not found" });
+      res.status(400).json({ message: "Post not found" });
       return;
     }
 
