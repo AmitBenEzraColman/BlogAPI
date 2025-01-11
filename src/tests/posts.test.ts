@@ -97,11 +97,21 @@ describe("Posts Tests", () => {
     expect(getDeleteResponse.statusCode).toBe(404);
   });
 
-  test("Test Create Post fail", async () => {
+  test("Test Create Post fail without only content", async () => {
+    const response = await request(app).post("/posts")
+      .set({ authorization: "JWT " + testUser.token })
+      .send({
+        content: "Test Content without sender",
+      });
+    expect(response.statusCode).toBe(400);
+  });
+
+  test("Test Create Post fail without title", async () => {
     const response = await request(app).post("/posts")
       .set({ authorization: "JWT " + testUser.token })
       .send({
         content: "Test Content without title",
+        sender: testUser._id,
       });
     expect(response.statusCode).toBe(400);
   });
