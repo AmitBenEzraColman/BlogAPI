@@ -1,7 +1,7 @@
 import mongoose, { ObjectId } from "mongoose";
 
 export interface IUser {
-  _id: ObjectId;
+  _id?: ObjectId;
   email: string;
   password: string;
   refreshTokens?: string[];
