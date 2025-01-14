@@ -163,6 +163,9 @@ const refresh = async (req: Request, res: Response) => {
       res.status(400).send({ message: "Not verified" });
       return;
     }
+
+    if (!user._id) return;
+
     const tokens = generateToken(user._id);
 
     if (!tokens) {
