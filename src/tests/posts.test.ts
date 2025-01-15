@@ -115,4 +115,16 @@ describe("Posts Tests", () => {
       });
     expect(response.statusCode).toBe(400);
   });
+
+    test("Test invalid post", async () => {
+      const invalidGetByIdResponse = await request(app).get("/posts/" + 123);
+      expect(invalidGetByIdResponse.statusCode).toBe(400);
+  
+      const invalidGetBySenderResponse = await request(app).get("/posts?sender=123");
+      expect(invalidGetBySenderResponse.statusCode).toBe(400);
+  
+      const getInvalidDeleteResponse = await request(app).delete("/posts/" + 123)
+      .set({ authorization: "JWT " + testUser.token });
+      expect(getInvalidDeleteResponse.statusCode).toBe(400);
+    });
 });
