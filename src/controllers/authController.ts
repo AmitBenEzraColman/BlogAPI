@@ -45,7 +45,7 @@ const login = async (req: Request, res: Response) => {
       res.status(401).send({ message: "email or password incorrect" });
       return;
     }
-    console.log(userDB);
+
     const token = generateToken(userDB._id);
     if (!token) {
       res.status(500).send({ message: "internal server error" });

@@ -4,20 +4,19 @@ import mongoose from "mongoose";
 import postModel from "../models/postsModel";
 import { Express } from "express";
 import userModel, { IUser } from "../models/userModel";
+import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
 
-var app: Express;
+let app: Express;
 
 beforeAll(async () => {
-  console.log("beforeAll");
   app = await initApp();
   await userModel.deleteMany();
   await postModel.deleteMany();
 });
 
-afterAll((done) => {
-  console.log("afterAll");
-  mongoose.connection.close();
-  done();
+afterAll(async () => {
+  await mongoose.connection.close();
 });
 
 const baseUrl = "/auth";
@@ -32,154 +31,354 @@ const testUser: User = {
   password: "testpassword",
 };
 
-describe("Auth tests", () => {
-  test("Test Register", async () => {
-    const response = await request(app).post("/auth/register").send(testUser);
-    expect(response.statusCode).toBe(200);
-  });
-
-  test("Test Register exist email", async () => {
-    const response = await request(app).post("/auth/register").send(testUser);
-    expect(response.statusCode).not.toBe(200);
-  });
-
-  test("Test Register missing password", async () => {
-    const response = await request(app).post("/auth/register").send({
-      email: "john@student.com",
+describe("Auth Tests", () => {
+  describe("Register Tests", () => {
+    beforeEach(async () => {
+      await userModel.deleteMany();
+      // Clear environment variables before each test
+      delete process.env.TOKEN_SECRET;
     });
-    expect(response.statusCode).toBe(400);
-  });
 
-  test("Test Register missing email", async () => {
-    const response = await request(app).post("/auth/register").send({
-      password: "1234567890",
+    test("Test successful registration", async () => {
+      const response = await request(app).post("/auth/register").send(testUser);
+      expect(response.statusCode).toBe(200);
+      expect(response.body.email).toBe(testUser.email);
+      expect(response.body.password).not.toBe(testUser.password); // Should be hashed
+
+      // Verify password was properly hashed
+      const savedUser = await userModel.findOne({ email: testUser.email });
+      const validPassword = await bcrypt.compare(
+        testUser.password,
+        savedUser!.password
+      );
+      expect(validPassword).toBe(true);
     });
-    expect(response.statusCode).toBe(400);
-  });
 
-  test("Auth test login", async () => {
-    const response = await request(app)
-      .post(baseUrl + "/login")
-      .send(testUser);
-    expect(response.statusCode).toBe(200);
-    const accessToken = response.body.accessToken;
-    const refreshToken = response.body.refreshToken;
-    expect(accessToken).toBeDefined();
-    expect(refreshToken).toBeDefined();
-    expect(response.body._id).toBeDefined();
-    testUser.accessToken = accessToken;
-    testUser.refreshToken = refreshToken;
-    testUser._id = response.body._id;
-  });
+    test("Test register with existing email", async () => {
+      await request(app).post("/auth/register").send(testUser);
 
-  test("Check tokens are not the same", async () => {
-    const response = await request(app)
-      .post(baseUrl + "/login")
-      .send(testUser);
-    const accessToken = response.body.accessToken;
-    const refreshToken = response.body.refreshToken;
-
-    expect(accessToken).not.toBe(testUser.accessToken);
-    expect(refreshToken).not.toBe(testUser.refreshToken);
-  });
-
-  test("Test access with valid token", async () => {
-    const responseLogin = await request(app).post("/auth/login").send(testUser);
-    expect(responseLogin.statusCode).toBe(200);
-    testUser.accessToken = responseLogin.body.accessToken;
-    testUser.refreshToken = responseLogin.body.refreshToken;
-
-    const responsePost = await request(app)
-      .post("/posts")
-      .set({ authorization: "Bearer " + testUser.accessToken })
-      .send({
-        title: "Test Post",
-        content: "Test Content",
-      });
-    expect(responsePost.statusCode).toBe(201);
-  });
-
-  test("Test access with invalid token", async () => {
-    const responseLogin = await request(app).post("/auth/login").send(testUser);
-    expect(responseLogin.statusCode).toBe(200);
-    testUser.accessToken = responseLogin.body.accessToken;
-    testUser.refreshToken = responseLogin.body.refreshToken;
-
-    const responsePost = await request(app)
-      .post("/posts")
-      .set({ authorization: "Bearer " + +"1" + testUser.accessToken })
-      .send({
-        title: "Test Post",
-        content: "Test Content",
-      });
-    expect(responsePost.statusCode).not.toBe(200);
-  });
-
-  jest.setTimeout(20000);
-  test("Test timeout token ", async () => {
-    const responseLogin = await request(app).post("/auth/login").send(testUser);
-    expect(responseLogin.statusCode).toBe(200);
-
-    testUser.accessToken = responseLogin.body.accessToken;
-    testUser.refreshToken = responseLogin.body.refreshToken;
-
-    await new Promise((resolve) => setTimeout(resolve, 6000));
-
-    const responsePost1 = await request(app)
-      .post("/posts")
-      .set({ authorization: "Bearer " + testUser.accessToken })
-      .send({
-        title: "Test Post",
-        content: "Test Content",
-      });
-    expect(responsePost1.statusCode).not.toBe(201);
-
-    const responseRefresh = await request(app).post("/auth/refresh").send({
-      refreshToken: testUser.refreshToken,
+      const response = await request(app).post("/auth/register").send(testUser);
+      expect(response.statusCode).toBe(400);
     });
-    expect(responseRefresh.statusCode).toBe(200);
-    testUser.accessToken = responseRefresh.body.accessToken;
 
-    const responsePost2 = await request(app)
-      .post("/posts")
-      .set({ authorization: "Bearer " + testUser.accessToken })
-      .send({
-        title: "Test Post",
-        content: "Test Content",
-      });
-    expect(responsePost2.statusCode).toBe(201);
+    test("Test register with missing password", async () => {
+      const response = await request(app)
+        .post("/auth/register")
+        .send({ email: "john@test.com" });
+      expect(response.statusCode).toBe(400);
+    });
+
+    test("Test register with missing email", async () => {
+      const response = await request(app)
+        .post("/auth/register")
+        .send({ password: "1234567890" });
+      expect(response.statusCode).toBe(400);
+    });
   });
 
-  test("User isn't authenticated and request refresh token", async () => {
-    const response = await request(app).get("/auth/refresh").send();
-    expect(response.statusCode).not.toBe(200);
+  describe("Login Tests", () => {
+    beforeEach(async () => {
+      await userModel.deleteMany();
+      await request(app).post("/auth/register").send(testUser);
+
+      process.env.TOKEN_SECRET = "test-secret";
+    });
+
+    test("Test login when TOKEN_SECRET is missing", async () => {
+      delete process.env.TOKEN_SECRET;
+
+      const response = await request(app)
+        .post(baseUrl + "/login")
+        .send(testUser);
+      expect(response.statusCode).toBe(500);
+      expect(response.body.message).toBe("internal server error");
+    });
+
+    test("Test login with database error", async () => {
+      jest
+        .spyOn(userModel, "findOne")
+        .mockRejectedValueOnce(new Error("Database error"));
+
+      const response = await request(app)
+        .post(baseUrl + "/login")
+        .send(testUser);
+      expect(response.statusCode).toBe(400);
+    });
+
+    test("Test successful login", async () => {
+      const response = await request(app)
+        .post(baseUrl + "/login")
+        .send(testUser);
+      expect(response.statusCode).toBe(200);
+      expect(response.body.accessToken).toBeDefined();
+      expect(response.body.refreshToken).toBeDefined();
+      expect(response.body._id).toBeDefined();
+    });
+
+    test("Test login with incorrect password", async () => {
+      const response = await request(app)
+        .post(baseUrl + "/login")
+        .send({ ...testUser, password: "wrongpassword" });
+      expect(response.statusCode).toBe(401);
+      expect(response.body.message).toBe("email or password incorrect");
+    });
+
+    test("Test login with non-existent email", async () => {
+      const response = await request(app)
+        .post(baseUrl + "/login")
+        .send({ email: "nonexistent@test.com", password: "password123" });
+      expect(response.statusCode).toBe(401);
+      expect(response.body.message).toBe("email or password incorrect");
+    });
+
+    test("Test login with missing email", async () => {
+      const response = await request(app)
+        .post(baseUrl + "/login")
+        .send({ password: testUser.password });
+      expect(response.statusCode).toBe(400);
+      expect(response.body.message).toBe("missing email or password");
+    });
+
+    test("Test login with missing password", async () => {
+      const response = await request(app)
+        .post(baseUrl + "/login")
+        .send({ email: testUser.email });
+      expect(response.statusCode).toBe(400);
+      expect(response.body.message).toBe("missing email or password");
+    });
   });
 
-  test("Test refresh token", async () => {
-    const response = await request(app).post("/auth/refresh").send({
-      refreshToken: testUser.refreshToken,
+  describe("Token and Authentication Tests", () => {
+    beforeEach(async () => {
+      await userModel.deleteMany();
+      await request(app).post("/auth/register").send(testUser);
+      const loginResponse = await request(app)
+        .post("/auth/login")
+        .send(testUser);
+      testUser.accessToken = loginResponse.body.accessToken;
+      testUser.refreshToken = loginResponse.body.refreshToken;
     });
-    expect(response.statusCode).toBe(200);
-    expect(response.body.accessToken).toBeDefined();
-    expect(response.body.refreshToken).toBeDefined();
-    testUser.accessToken = response.body.accessToken;
-    testUser.refreshToken = response.body.refreshToken;
+
+    test("Test accessing protected route with valid token", async () => {
+      const response = await request(app)
+        .post("/posts")
+        .set({ authorization: `Bearer ${testUser.accessToken}` })
+        .send({
+          title: "Test Post",
+          content: "Test Content",
+        });
+      expect(response.statusCode).toBe(201);
+    });
+
+    test("Test accessing protected route with invalid token", async () => {
+      const response = await request(app)
+        .post("/posts")
+        .set({ authorization: "Bearer invalid_token" })
+        .send({
+          title: "Test Post",
+          content: "Test Content",
+        });
+      expect(response.statusCode).toBe(401);
+    });
+
+    jest.setTimeout(20000);
+    test("Test token expiration and refresh flow", async () => {
+      await new Promise((resolve) => setTimeout(resolve, 6000));
+
+      const expiredResponse = await request(app)
+        .post("/posts")
+        .set({ authorization: `Bearer ${testUser.accessToken}` })
+        .send({
+          title: "Test Post",
+          content: "Test Content",
+        });
+      expect(expiredResponse.statusCode).toBe(401);
+
+      const refreshResponse = await request(app)
+        .post("/auth/refresh")
+        .send({ refreshToken: testUser.refreshToken });
+      expect(refreshResponse.statusCode).toBe(200);
+
+      const newResponse = await request(app)
+        .post("/posts")
+        .set({ authorization: `Bearer ${refreshResponse.body.accessToken}` })
+        .send({
+          title: "Test Post",
+          content: "Test Content",
+        });
+      expect(newResponse.statusCode).toBe(201);
+    });
   });
 
-  test("Test logout", async () => {
-    const responseLogin = await request(app).post("/auth/login").send(testUser);
-    expect(responseLogin.statusCode).toBe(200);
-    testUser.accessToken = responseLogin.body.accessToken;
-    testUser.refreshToken = responseLogin.body.refreshToken;
-
-    const responselogout = await request(app).post("/auth/logout").send({
-      refreshToken: testUser.refreshToken,
+  describe("Refresh Token Tests", () => {
+    beforeEach(async () => {
+      await userModel.deleteMany();
+      process.env.TOKEN_SECRET = "test-secret";
+      await request(app).post("/auth/register").send(testUser);
+      const loginResponse = await request(app)
+        .post("/auth/login")
+        .send(testUser);
+      testUser.refreshToken = loginResponse.body.refreshToken;
     });
-    expect(responselogout.statusCode).toBe(200);
 
-    const responseRefresh = await request(app).post("/auth/refresh").send({
-      refreshToken: testUser.refreshToken,
+    test("Test refresh token when TOKEN_SECRET is missing", async () => {
+      delete process.env.TOKEN_SECRET;
+
+      const response = await request(app)
+        .post("/auth/refresh")
+        .send({ refreshToken: testUser.refreshToken });
+      expect(response.statusCode).toBe(400);
     });
-    expect(responseRefresh.statusCode).not.toBe(200);
+
+    test("Test refresh with database error during user lookup", async () => {
+      const validToken = jwt.sign(
+        {
+          _id: new mongoose.Types.ObjectId(),
+          random: Math.random().toString(),
+        },
+        "test-secret"
+      );
+      jest
+        .spyOn(userModel, "findById")
+        .mockRejectedValueOnce(new Error("Database error"));
+
+      const response = await request(app)
+        .post("/auth/refresh")
+        .send({ refreshToken: validToken });
+      expect(response.statusCode).toBe(400);
+    });
+
+    test("Test refresh with jwt verification error", async () => {
+      jest
+        .spyOn(jwt, "verify")
+        .mockImplementationOnce((token, secret, callback: any) => {
+          callback(new Error("JWT Error"), null);
+        });
+
+      const response = await request(app)
+        .post("/auth/refresh")
+        .send({ refreshToken: testUser.refreshToken });
+      expect(response.statusCode).toBe(400);
+    });
+
+    test("Test refresh with database error during save", async () => {
+      const loginResponse = await request(app)
+        .post("/auth/login")
+        .send(testUser);
+
+      jest
+        .spyOn(mongoose.Model.prototype, "save")
+        .mockRejectedValueOnce(new Error("Save error"));
+
+      const response = await request(app)
+        .post("/auth/refresh")
+        .send({ refreshToken: loginResponse.body.refreshToken });
+      expect(response.statusCode).toBe(400);
+    });
+
+    test("Test successful refresh token", async () => {
+      const response = await request(app)
+        .post("/auth/refresh")
+        .send({ refreshToken: testUser.refreshToken });
+      expect(response.statusCode).toBe(200);
+      expect(response.body.accessToken).toBeDefined();
+      expect(response.body.refreshToken).toBeDefined();
+      expect(response.body._id).toBeDefined();
+    });
+
+    test("Test refresh with invalid token", async () => {
+      const response = await request(app)
+        .post("/auth/refresh")
+        .send({ refreshToken: "invalid_token" });
+      expect(response.statusCode).toBe(400);
+    });
+
+    test("Test refresh without token", async () => {
+      const response = await request(app).post("/auth/refresh").send({});
+      expect(response.statusCode).toBe(400);
+    });
+
+    test("Test refresh with valid token format but non-existent user", async () => {
+      const fakeToken = jwt.sign(
+        {
+          _id: new mongoose.Types.ObjectId(),
+          random: Math.random().toString(),
+        },
+        process.env.TOKEN_SECRET!
+      );
+      const response = await request(app)
+        .post("/auth/refresh")
+        .send({ refreshToken: fakeToken });
+      expect(response.statusCode).toBe(400);
+    });
+  });
+
+  describe("Logout Tests", () => {
+    beforeEach(async () => {
+      await userModel.deleteMany();
+      process.env.TOKEN_SECRET = "test-secret";
+      await request(app).post("/auth/register").send(testUser);
+      const loginResponse = await request(app)
+        .post("/auth/login")
+        .send(testUser);
+      testUser.refreshToken = loginResponse.body.refreshToken;
+    });
+
+    test("Test logout when TOKEN_SECRET is missing", async () => {
+      delete process.env.TOKEN_SECRET;
+
+      const response = await request(app)
+        .post("/auth/logout")
+        .send({ refreshToken: testUser.refreshToken });
+      expect(response.statusCode).toBe(400);
+    });
+
+    test("Test logout with database error during save", async () => {
+      jest
+        .spyOn(mongoose.Model.prototype, "save")
+        .mockRejectedValueOnce(new Error("Save error"));
+
+      const response = await request(app)
+        .post("/auth/logout")
+        .send({ refreshToken: testUser.refreshToken });
+      expect(response.statusCode).toBe(400);
+    });
+
+    test("Test logout with jwt verification error", async () => {
+      jest
+        .spyOn(jwt, "verify")
+        .mockImplementationOnce((token, secret, callback: any) => {
+          callback(new Error("JWT Error"), null);
+        });
+
+      const response = await request(app)
+        .post("/auth/logout")
+        .send({ refreshToken: testUser.refreshToken });
+      expect(response.statusCode).toBe(400);
+    });
+
+    test("Test successful logout", async () => {
+      const logoutResponse = await request(app)
+        .post("/auth/logout")
+        .send({ refreshToken: testUser.refreshToken });
+      expect(logoutResponse.statusCode).toBe(200);
+
+      const refreshResponse = await request(app)
+        .post("/auth/refresh")
+        .send({ refreshToken: testUser.refreshToken });
+      expect(refreshResponse.statusCode).toBe(400);
+    });
+
+    test("Test logout with invalid refresh token", async () => {
+      const response = await request(app)
+        .post("/auth/logout")
+        .send({ refreshToken: "invalid_token" });
+      expect(response.statusCode).toBe(400);
+    });
+
+    test("Test logout without refresh token", async () => {
+      const response = await request(app).post("/auth/logout").send({});
+      expect(response.statusCode).toBe(400);
+    });
   });
 });
