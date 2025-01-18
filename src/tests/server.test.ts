@@ -1,8 +1,9 @@
 import initBlogApiApp from "../server";
 import mongoose from "mongoose";
+import express, { Express } from "express";
 
 describe("Server tests", () => {
-  test("Fails to initialize app without DB_CONNECTION", async () => {
+  test("Test without DB_CONNECTION fail", async () => {
     const originalEnv = process.env.DB_CONNECTION;
     process.env.DB_CONNECTION = "";
 
@@ -13,7 +14,7 @@ describe("Server tests", () => {
     process.env.DB_CONNECTION = originalEnv;
   });
 
-  test("Initializes app successfully with valid DB_CONNECTION", async () => {
+  test("Test Initializes app successfully with valid DB_CONNECTION", async () => {
     const originalEnv = process.env.DB_CONNECTION;
     process.env.DB_CONNECTION = "mongodb://localhost:27017/test";
 
@@ -23,4 +24,17 @@ describe("Server tests", () => {
 
     process.env.DB_CONNECTION = originalEnv;
   });
+
+  test("Test reject when mongoose connect fails", async () => {
+    const originalEnv = process.env.DB_CONNECTION;
+    process.env.DB_CONNECTION = "mongodb://invalid-host:27017/test";
+
+    // Mocking the mongoose.connect to reject with an error
+    mongoose.connect = jest.fn().mockRejectedValue(new Error("MongoDB connection failed"));
+
+    await expect(initBlogApiApp()).rejects.toThrow("MongoDB connection failed");
+
+    process.env.DB_CONNECTION = originalEnv;
+  });
+
 });

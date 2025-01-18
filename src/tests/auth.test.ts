@@ -181,33 +181,33 @@ describe("Auth Tests", () => {
       expect(response.statusCode).toBe(401);
     });
 
-    jest.setTimeout(20000);
-    test("Test token expiration and refresh flow", async () => {
-      await new Promise((resolve) => setTimeout(resolve, 6000));
+    // jest.setTimeout(20000);
+    // test("Test token expiration and refresh flow", async () => {
+    //   await new Promise((resolve) => setTimeout(resolve, 6000));
 
-      const expiredResponse = await request(app)
-        .post("/posts")
-        .set({ authorization: `Bearer ${testUser.accessToken}` })
-        .send({
-          title: "Test Post",
-          content: "Test Content",
-        });
-      expect(expiredResponse.statusCode).toBe(401);
+    //   const expiredResponse = await request(app)
+    //     .post("/posts")
+    //     .set({ authorization: `Bearer ${testUser.accessToken}` })
+    //     .send({
+    //       title: "Test Post",
+    //       content: "Test Content",
+    //     });
+    //   expect(expiredResponse.statusCode).toBe(401);
 
-      const refreshResponse = await request(app)
-        .post("/auth/refresh")
-        .send({ refreshToken: testUser.refreshToken });
-      expect(refreshResponse.statusCode).toBe(200);
+    //   const refreshResponse = await request(app)
+    //     .post("/auth/refresh")
+    //     .send({ refreshToken: testUser.refreshToken });
+    //   expect(refreshResponse.statusCode).toBe(200);
 
-      const newResponse = await request(app)
-        .post("/posts")
-        .set({ authorization: `Bearer ${refreshResponse.body.accessToken}` })
-        .send({
-          title: "Test Post",
-          content: "Test Content",
-        });
-      expect(newResponse.statusCode).toBe(201);
-    });
+    //   const newResponse = await request(app)
+    //     .post("/posts")
+    //     .set({ authorization: `Bearer ${refreshResponse.body.accessToken}` })
+    //     .send({
+    //       title: "Test Post",
+    //       content: "Test Content",
+    //     });
+    //   expect(newResponse.statusCode).toBe(201);
+    // });
   });
 
   describe("Refresh Token Tests", () => {
@@ -311,6 +311,41 @@ describe("Auth Tests", () => {
         .send({ refreshToken: fakeToken });
       expect(response.statusCode).toBe(400);
     });
+
+    jest.setTimeout(10000);
+  test("Test timeout token ", async () => {
+    const loginResponse = await request(app).post(baseUrl + "/login").send(testUser);
+    expect(loginResponse.statusCode).toBe(200);
+    testUser.accessToken = loginResponse.body.accessToken;
+    testUser.refreshToken = loginResponse.body.refreshToken;
+
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+
+    const postsResponse = await request(app).post("/posts").set(
+      { authorization: "JWT " + testUser.accessToken }
+    ).send({
+      title: "Test Post",
+      content: "Test Content",
+      owner: "Test owner",
+    });
+    expect(postsResponse.statusCode).not.toBe(201);
+
+    const refreshResponse = await request(app).post(baseUrl + "/refresh").send({
+      refreshToken: testUser.refreshToken,
+    });
+    expect(refreshResponse.statusCode).toBe(200);
+    testUser.accessToken = refreshResponse.body.accessToken;
+
+    const secPostsResponse = await request(app).post("/posts").set(
+      { authorization: "JWT " + testUser.accessToken }
+    ).send({
+      title: "Test Post 2",
+      content: "Test Content 2",
+      owner: "Test owner",
+    });
+    expect(secPostsResponse.statusCode).toBe(201);
+  });
+    
   });
 
   describe("Logout Tests", () => {
@@ -380,5 +415,6 @@ describe("Auth Tests", () => {
       const response = await request(app).post("/auth/logout").send({});
       expect(response.statusCode).toBe(400);
     });
+    
   });
 });

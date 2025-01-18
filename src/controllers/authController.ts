@@ -159,10 +159,6 @@ const verifyRefreshToken = (refreshToken: string | undefined) => {
 const refresh = async (req: Request, res: Response) => {
   try {
     const user = await verifyRefreshToken(req.body.refreshToken);
-    if (!user) {
-      res.status(400).send({ message: "Not verified" });
-      return;
-    }
 
     if (!user._id) return;
 
