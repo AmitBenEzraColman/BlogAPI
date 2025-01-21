@@ -1,35 +1,84 @@
+
 ###
-GET http://localhost:3000
-###
-GET http://localhost:3000/posts
-###
-GET http://localhost:3000/posts?sender=Amit
-###
-GET http://localhost:3000/posts/6779ba422ef880c97d4a9697
-###
-POST http://localhost:3000/posts 
+# Auth Routes
+POST http://localhost:3000/auth/register
 Content-Type: application/json
+
 {
-"title": "Hello", "sender": "Amit", "content": "Hello World..."
+  "email": "test@example.com",
+  "password": "password123"
 }
 
 ###
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "password123"
+}
+
+###
+POST http://localhost:3000/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "refresh_token_here"
+}
+
+###
+POST http://localhost:3000/auth/logout
+Content-Type: application/json
+
+{
+  "refreshToken": "refresh_token_here"
+}
+
+###
+# Posts Routes
+GET http://localhost:3000/posts
+
+###
+GET http://localhost:3000/posts?sender={userId}
+
+###
+GET http://localhost:3000/posts/6779ba422ef880c97d4a9697
+
+###
+POST http://localhost:3000/posts
+Content-Type: application/json
+Authorization: Bearer access_token_here
+
+{
+  "title": "Hello",
+  "content": "Hello World..."
+}
+
+###
+DELETE http://localhost:3000/posts/6779ba422ef880c97d4a9697
+Authorization: Bearer access_token_here
+
+###
+# Comments Routes
 GET http://localhost:3000/comments
+
 ###
 GET http://localhost:3000/comments/677acfa8b1bc6fa315289939
+
 ###
-###
-GET http://localhost:3000/comments?sender=Yarin
+GET http://localhost:3000/comments?sender={userId}
+
 ###
 POST http://localhost:3000/comments
 Content-Type: application/json
+Authorization: Bearer access_token_here
 
 {
-    "comment": "Hello",
-    "sender": "Yarin",
-    "postId": "6779ba422ef880c97d4a9697",
+  "comment": "Hello",
+  "postId": "6779ba422ef880c97d4a9697"
 }
+
 ###
 DELETE http://localhost:3000/comments/677acfa8b1bc6fa315289939
+Authorization: Bearer access_token_here
 ###
-DELETE http://localhost:3000/posts/6779ba422ef880c97d4a9697
