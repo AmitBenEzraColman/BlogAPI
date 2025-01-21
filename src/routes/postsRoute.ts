@@ -5,11 +5,11 @@ import { authMiddleware } from "../middlewares/authMiddleware";
 const router = express.Router();
 
 /**
-* @swagger
-* tags:
-*   name: Posts
-*   description: The Posts API
-*/
+ * @swagger
+ * tags:
+ *   name: Posts
+ *   description: The Posts API
+ */
 
 /**
  * @swagger
@@ -32,7 +32,7 @@ const router = express.Router();
  *           description: The content of the post
  *         sender:
  *           type: string
- *           description: The sender of the post id 
+ *           description: The sender of the post id
  *       example:
  *         _id: 245234t234234r234r23f4
  *         title: My First Post
@@ -139,7 +139,7 @@ router.post("/", authMiddleware, (req, res) => {
 
 /**
  * @swagger
- * posts/{id}:
+ * /posts/{id}:
  *   delete:
  *     summary: Delete a post by ID
  *     description: Delete a single post by its ID

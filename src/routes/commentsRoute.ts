@@ -5,11 +5,11 @@ import { authMiddleware } from "../middlewares/authMiddleware";
 const router = express.Router();
 
 /**
-* @swagger
-* tags:
-*   name: Comments
-*   description: The Comments API
-*/
+ * @swagger
+ * tags:
+ *   name: Comments
+ *   description: The Comments API
+ */
 
 /**
  * @swagger
@@ -142,7 +142,7 @@ router.post("/", authMiddleware, (req, res) => {
 
 /**
  * @swagger
- * comments/{id}:
+ * /comments/{id}:
  *   delete:
  *     summary: Delete a comment by ID
  *     description: Delete a single comment by its ID
