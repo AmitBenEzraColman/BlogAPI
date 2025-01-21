@@ -125,4 +125,15 @@ describe("Comments Tests", () => {
     expect(response.statusCode).toBe(400);
   });
 
+  test("Test invalid comment", async () => {
+    const invalidGetByIdResponse = await request(app).get("/comments/" + 123);
+    expect(invalidGetByIdResponse.statusCode).toBe(400);
+
+    const invalidGetBySenderResponse = await request(app).get("/comments?sender=123");
+    expect(invalidGetBySenderResponse.statusCode).toBe(400);
+
+    const getInvalidDeleteResponse = await request(app).delete("/comments/" + 123)
+    .set({ authorization: "JWT " + testUser.token });
+    expect(getInvalidDeleteResponse.statusCode).toBe(400);
+  });
 });

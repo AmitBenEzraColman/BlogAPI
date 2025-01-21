@@ -45,7 +45,7 @@ const login = async (req: Request, res: Response) => {
       res.status(401).send({ message: "email or password incorrect" });
       return;
     }
-    console.log(userDB);
+
     const token = generateToken(userDB._id);
     if (!token) {
       res.status(500).send({ message: "internal server error" });
@@ -159,10 +159,6 @@ const verifyRefreshToken = (refreshToken: string | undefined) => {
 const refresh = async (req: Request, res: Response) => {
   try {
     const user = await verifyRefreshToken(req.body.refreshToken);
-    if (!user) {
-      res.status(400).send({ message: "Not verified" });
-      return;
-    }
 
     if (!user._id) return;
 
